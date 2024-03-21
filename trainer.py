@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 
 import torch
 from transformers.trainer import Trainer
-from utils import  print_rank_0
+from utils import  print_rank_0, convert_ids_to_string
 
 import logging
 import time
@@ -93,9 +93,9 @@ class Trainer(Trainer):
         sequence_lengths = (torch.ne(instruction, self.args.eod_id).sum(-1)).to(labels.device)
         for bidx, bdata in enumerate(instruction):
             seq_l_idx = sequence_lengths[bidx]
+            # print(convert_ids_to_string(bdata[:seq_l_idx]))
+            # print(a)
             output = model.generate(input_ids=bdata[:seq_l_idx].unsqueeze(0), max_length=self.args.max_seq_len).squeeze()
-            # print_rank_0(output)
-            # print_rank_0(labels[bidx])
             output = output.tolist() + (self.args.max_seq_len - len(output)) * [self.args.pad_id]
             preds.append(output)
         preds = torch.tensor(preds).cuda(device=labels.device)

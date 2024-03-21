@@ -58,3 +58,7 @@ class TrainingArguments(TrainingArguments):
     eod_id: Optional[int] = field(default=2, metadata={"help": "The end of text id of the model"})
     sep_id: Optional[int] = field(default=0, metadata={"help": "The id for separating the text into instruction and answer"})
     pad_id: Optional[int] = field(default=1, metadata={"help": "The pading id of the model"})
+    only_api_call: Optional[bool] =field(default=True,metadata={'help': "true refers to that only output the api_call."})
+    target_loss: Optional[bool] = field(default=True, metadata={'help': "true refers to that only the loss is calculated on the output."})
+    quantization: Optional[bool] = field(default=True, metadata={'help': "true refers to that quantify the parameters in the mode into int4."})
+    lora: Optional[bool] = field(default=True, metadata={'help': "true refers to use lora to train the model."})

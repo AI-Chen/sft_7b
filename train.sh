@@ -11,23 +11,33 @@ export NCCL_IB_DISABLE="1"
 
 ####################################### Data INFO #####################################
 data_name="huggingface" #choose dataset: huggingface, tensorflow, torchhub
+only_api_call=true # true refers to that only output the api_call
+target_loss=true # true refers to that only the loss is calculated on the output
+quantization=true # true refers to that quantify the parameters in the mode into int4
+lora=true # true refers to use lora to train the model
 exp_name="test" # experiment name
 data_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/DATA/apibench/${data_name}"
 echo data_path:$data_path
 #######################################################################################
 
 ####################################### Model INFO ####################################
-model_type="gpt_base"
-model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/gpt2_base"
-sep_id=50256
-pad_id=50256
-eod_id=50256
+#model_type="gpt_base"
+#model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/gpt2_base"
+#sep_id=50256
+#pad_id=50256
+#eod_id=50256
 
-#model_type="falcon"
-#model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/gorilla-falcon-7b-hf-v0"
-#sep_id=9
-#pad_id=10
-#eod_id=11
+#model_type="gpt_large"
+#model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/gpt2_large"
+#sep_id=50256
+#pad_id=50256
+#eod_id=50256
+
+model_type="falcon"
+model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/falcon_7b"
+sep_id=9
+pad_id=11
+eod_id=11
 #######################################################################################
 
 ####################################### Basic Params ##################################
@@ -36,12 +46,12 @@ NPROC=2
 per_device_train_batch_size=2
 per_device_eval_batch_size=1 #32,8
 
-max_seq_len=768
+max_seq_len=256
 dataloader_num_workers=2
 
 learning_rate=1e-5
-logging_steps=2
-eval_steps=200 #20,150
+logging_steps=20
+eval_steps=1000 #20,150
 save_steps=10
 num_train_epochs=5
 gradient_accumulation_steps=2
@@ -90,5 +100,9 @@ torchrun $distributed_cmd \
   --per_device_eval_batch_size $per_device_eval_batch_size \
   --overwrite_output_dir \
   --dataloader_num_workers $dataloader_num_workers \
-  --fp16
+  --fp16 \
+  --only_api_call $only_api_call \
+  --target_loss $target_loss \
+  --quantization $quantization \
+  --lora $lora
 #######################################################################################

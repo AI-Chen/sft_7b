@@ -25,11 +25,25 @@ from dataloader import ApiDataset, collate_fn
 from transformers import AutoTokenizer, BitsAndBytesConfig
 #from modeling.falcon.modelling_RW import RWForCausalLM
 from modeling.gpt2.modeling_gpt2 import GPT2LMHeadModel as GPT2Model
+from modeling.falcon.modeling_falcon import FalconForCausalLM
 from trainer import Trainer
 from peft import get_peft_config, get_peft_model, LoraConfig, TaskType, prepare_model_for_kbit_training
 from utils import print_rank_0, compute_metrics
 
 logger = logging.getLogger(__name__)
+
+quantization_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.bfloat16,
+)
+
+peft_config = LoraConfig(
+    task_type=TaskType.SEQ_2_SEQ_LM, inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1
+)
+
+
 
 def main():
     # See all possible arguments in src/transformers/training_args.py
@@ -90,22 +104,21 @@ def main():
 
     set_seed(training_args.seed)
     if "gpt" in model_args.model_name_or_path:
-        model = GPT2Model.from_pretrained(model_args.model_name_or_path).cuda()
-    # elif "falcon" in model_args.model_name_or_path:
-    #     quantization_config = BitsAndBytesConfig(
-    #         load_in_4bit=True,
-    #         bnb_4bit_use_double_quant=True,
-    #         bnb_4bit_quant_type="nf4",
-    #         bnb_4bit_compute_dtype=torch.bfloat16,
-    #     )
-    #     peft_config = LoraConfig(
-    #         task_type=TaskType.SEQ_2_SEQ_LM, inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1
-    #     )
-    #     model = RWForCausalLM.from_pretrained(model_args.model_name_or_path, quantization_config=quantization_config)
-    #     # model.gradient_checkpointing_enable()
-    #     # model = prepare_model_for_kbit_training(model)
-    #     model = get_peft_model(model, peft_config)
-    #     model.print_trainable_parameters()
+        if training_args.quantization:
+            model = GPT2Model.from_pretrained(model_args.model_name_or_path, quantization_config=quantization_config)
+        else:
+            model = GPT2Model.from_pretrained(model_args.model_name_or_path).cuda()
+        if training_args.lora:
+            model = get_peft_model(model, peft_config)
+            model.print_trainable_parameters()
+    elif "falcon" in model_args.model_name_or_path:
+        if training_args.quantization:
+            model = FalconForCausalLM.from_pretrained(model_args.model_name_or_path, quantization_config=quantization_config)
+        else:
+            model = FalconForCausalLM.from_pretrained(model_args.model_name_or_path).cuda()
+        if training_args.lora:
+            model = get_peft_model(model, peft_config)
+            model.print_trainable_parameters()
 
 
     train_dataset = ApiDataset(training_args, data_args.data_path, data_args.data_name, mode="train")

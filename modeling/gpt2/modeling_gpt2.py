@@ -1100,9 +1100,6 @@ class GPT2LMHeadModel(GPT2PreTrainedModel):
         if labels is not None:
             # move labels to correct device to enable model parallelism
             labels = labels.to(lm_logits.device)
-            sequence_lengths = (torch.ne(input_ids, self.config.eos_token_id).sum(-1) + 1).to(labels.device)
-            for idx in range(len(labels)):
-                labels[idx, sequence_lengths[idx]:] = -100
             # Shift so that tokens < n predict n
             shift_logits = lm_logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()

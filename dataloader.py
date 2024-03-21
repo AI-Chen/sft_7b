@@ -6,6 +6,7 @@
 import os
 import json
 import random
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 from dataclasses import dataclass
@@ -27,8 +28,13 @@ class ApiDataset(Dataset):
         for (i, line) in enumerate(fin):
             line = json.loads(line.strip())
             sample = line['code']
-            api_call = line["api_call"]
-            examples.append([sample, api_call])
+            if self.args.only_api_call:
+                api_call = line["api_call"]
+                sample = sample.split("###Output:")[0] + "###Output:" + api_call
+                examples.append([sample, api_call])
+            else:
+                api_call = line["api_call"]
+                examples.append([sample, api_call])
         fin.close()
         if self.mode == "train":
             random.shuffle(examples)
@@ -74,21 +80,23 @@ class collate_fn():
 
     def process_text_train(self, example):
         sample = example["sample"]
-        return self.encode_text(sample)
+        token_ids, attention_mask = self.encode_text(sample)
+        labels, _ = self.encode_text(sample, pad_id=-100)
+        return token_ids, attention_mask, labels
 
     def process_text_dev(self, example):
         sample, api_call = example["sample"], example["api_call"]
         sample_ids, sample_attn_mask = self.encode_text(sample)
-        instruct = sample.split("###Output: ")[0] + "###Output: "
+        labels, _ = self.encode_text(sample, pad_id=-100)
+        instruct = sample.split("###Output:")[0] + "###Output:"
         ins_ids, ins_attn_mask = self.encode_text(instruct)
         api_ids, _ = self.encode_text(api_call, pad_id=-100)
-
-        return sample_ids, sample_attn_mask, ins_ids, ins_attn_mask, api_ids
+        return sample_ids, sample_attn_mask, ins_ids, ins_attn_mask, api_ids, labels
 
     def __call__(self, features):
         mode = features[0]["mode"]
         if mode == "train":
-            fea_list = [[] for _ in range(2)]
+            fea_list = [[] for _ in range(3)]
             for fea in features:
                 encode_feas = self.process_text_train(fea)
                 for idx, encode_fea in enumerate(encode_feas):
@@ -96,18 +104,19 @@ class collate_fn():
             batch_data = {
                     'input_ids': torch.tensor(fea_list[0]),
                     'attention_mask': torch.tensor(fea_list[1]),
-                    'labels': torch.tensor(fea_list[0]),  # Note that the labels **are shifted** inside the model, i.e. you can set `labels = input_ids`
+                    'labels': torch.tensor(fea_list[2]),  # Note that the labels **are shifted** inside the model, i.e. you can set `labels = input_ids`
             }
         elif mode == "dev":
-            fea_list = [[] for _ in range(5)]
+            fea_list = [[] for _ in range(6)]
             for fea in features:
                 encode_feas = self.process_text_dev(fea)
                 for idx, encode_fea in enumerate(encode_feas):
                     fea_list[idx].append(encode_fea)
+
             batch_data = {
                 'sample_ids': torch.tensor(fea_list[0]),
                 'sample_attn_mask': torch.tensor(fea_list[1]),
-                'sample_labels': torch.tensor(fea_list[0]),
+                'sample_labels': torch.tensor(fea_list[5]),
                 'ins_ids': torch.tensor(fea_list[2]),
                 'ins_attn_mask': torch.tensor(fea_list[3]),
                 'api_ids': torch.tensor(fea_list[4])
