@@ -13,8 +13,8 @@ export NCCL_IB_DISABLE="1"
 data_name="huggingface" #choose dataset: huggingface, tensorflow, torchhub
 only_api_call=true # true refers to that only output the api_call
 target_loss=true # true refers to that only the loss is calculated on the output
-quantization=true # true refers to that quantify the parameters in the mode into int4
-lora=true # true refers to use lora to train the model
+quantization=false # true refers to that quantify the parameters in the mode into int4
+lora=false # true refers to use lora to train the model
 exp_name="test" # experiment name
 data_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/DATA/apibench/${data_name}"
 echo data_path:$data_path
@@ -27,17 +27,17 @@ echo data_path:$data_path
 #pad_id=50256
 #eod_id=50256
 
-#model_type="gpt_large"
-#model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/gpt2_large"
-#sep_id=50256
-#pad_id=50256
-#eod_id=50256
+model_type="gpt_large"
+model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/gpt2_large"
+sep_id=50256
+pad_id=50256
+eod_id=50256
 
-model_type="falcon"
-model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/falcon_7b"
-sep_id=9
-pad_id=11
-eod_id=11
+#model_type="falcon"
+#model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/falcon_7b"
+#sep_id=9
+#pad_id=11
+#eod_id=11
 #######################################################################################
 
 ####################################### Basic Params ##################################
@@ -53,7 +53,7 @@ learning_rate=1e-5
 logging_steps=20
 eval_steps=1000 #20,150
 save_steps=10
-num_train_epochs=5
+num_train_epochs=20
 gradient_accumulation_steps=2
 warmup_steps=1200 #1200
 
