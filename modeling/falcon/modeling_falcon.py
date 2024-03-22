@@ -90,10 +90,8 @@ class FalconRotaryEmbedding(nn.Module):
 
             if dtype in [torch.float16, torch.bfloat16]:
                 emb = emb.float()
-
             self.cos_cached = emb.cos()[None, :, :]
             self.sin_cached = emb.sin()[None, :, :]
-
             self.cos_cached = self.cos_cached.type(dtype)
             self.sin_cached = self.sin_cached.type(dtype)
 
@@ -105,6 +103,8 @@ class FalconRotaryEmbedding(nn.Module):
     def forward(self, query, key, past_key_values_length=0):
         batch, seq_len, head_dim = query.shape
         cos, sin = self.cos_sin(seq_len, past_key_values_length, query.device, query.dtype)
+        cos = cos.type(query.dtype)
+        sin = sin.type(query.dtype)
         return (query * cos) + (rotate_half(query) * sin), (key * cos) + (rotate_half(key) * sin)
 
 

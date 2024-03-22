@@ -17,11 +17,7 @@ from transformers import AutoTokenizer
 tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path, trust_remote_code=True)
 
 def convert_ids_to_string(token_ids):
-    # text = ""
-    # for id in token_ids:
-    #     if tokenizer._convert_id_to_token(id) in ["Ġ", "ĠaĠ", ]
-    #     text += tokenizer._convert_id_to_token(id)
-    text = tokenizer.decode(token_ids)
+    text = tokenizer.decode(token_ids, skip_special_tokens=True)
     return text
 
 def print_rank_0(obj):
