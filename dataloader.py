@@ -66,28 +66,46 @@ class collate_fn():
         self.eod_id = args.eod_id
         self.sep_id = args.sep_id
 
-    def encode_text(self, text, pad_id=None):
-        token_ids = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(text))
-        token_ids = token_ids[:self.max_seq_length -1] + [self.eod_id]
+    def encode_text(self, text, pad_id=None, forloss=False):
+        if forloss:
+            assert pad_id == -100
+        if forloss and self.args.target_loss:
+            prompt, answer = text.split("###Output:")
+
+            prompt += "###Output:"
+            prompt_ids = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(prompt))
+            token_ids = [-100] * len(prompt_ids)
+            ans_ids = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(answer))
+            token_ids += ans_ids
+        else:
+            token_ids = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(text))
+
+        token_ids = token_ids[:self.max_seq_length - 1] + [self.eod_id]
         attention_mask = [1] * len(token_ids)
         pad_length = self.max_seq_length - len(token_ids)
         if pad_id is None:
             token_ids = token_ids + [self.pad_id] * pad_length
         else:
-            token_ids = token_ids + [-100] * pad_length
+            token_ids = token_ids + [pad_id] * pad_length
         attention_mask = attention_mask + [0] * pad_length
         return token_ids, attention_mask
 
     def process_text_train(self, example):
         sample = example["sample"]
         token_ids, attention_mask = self.encode_text(sample)
-        labels, _ = self.encode_text(sample, pad_id=-100)
+        if self.args.target_loss:
+            labels, _ = self.encode_text(sample, pad_id=-100, forloss=True)
+        else:
+            labels, _ = self.encode_text(sample, pad_id=-100, forloss=False)
         return token_ids, attention_mask, labels
 
     def process_text_dev(self, example):
         sample, api_call = example["sample"], example["api_call"]
         sample_ids, sample_attn_mask = self.encode_text(sample)
-        labels, _ = self.encode_text(sample, pad_id=-100)
+        if self.args.target_loss:
+            labels, _ = self.encode_text(sample, pad_id=-100, forloss=True)
+        else:
+            labels, _ = self.encode_text(sample, pad_id=-100, forloss=False)
         instruct = sample.split("###Output:")[0] + "###Output:"
         ins_ids, ins_attn_mask = self.encode_text(instruct)
         api_ids, _ = self.encode_text(api_call, pad_id=-100)
