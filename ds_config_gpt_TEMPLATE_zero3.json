@@ -1,0 +1,83 @@
+{
+  "optimizer": {
+    "type": "Adam",
+    "params": {
+      "lr": 1.2e-4,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0.1
+    }
+  },
+
+  "zero_optimization": {
+    "stage": 3,
+    "allgather_partitions": true,
+    "overlap_comm": true,
+    "reduce_scatter": true,
+    "contiguous_gradients": true,
+    "stage3_prefetch_bucket_size": 1e9,
+    "stage3_max_live_parameters" : 1.2e9,
+    "reduce_bucket_size": 2e9,
+    "sub_group_size": 1e9,
+    "sub_group_buffer_num": 10,
+    "pipeline_optimizer": true,
+    "max_contigous_event_size": 0,
+    "cache_sub_group_rate": 0.0,
+    "prefetch_cache_sub_group_rate": 0.0,
+    "max_contigous_params_size": 2.4e9,
+    "max_param_reduce_events": 1,
+    "is_communication_time_profiling": false,
+    "save_large_model_multi_slice": true,
+    "load_repartition_dense": CONFIG_LOAD_MP_ENABLED,
+    "offload_optimizer": {
+      "device": "cpu",
+      "pin_memory": true
+    }
+  },
+
+  "gradient_clipping": 1.0,
+  "prescale_gradients": false,
+
+  "fp16": {
+    "enabled": CONFIG_FP16_ENABLED,
+    "loss_scale": 0,
+    "loss_scale_window": 500,
+    "hysteresis": 2,
+    "min_loss_scale": 1,
+    "initial_scale_power": 15
+  },
+
+  "bf16": {
+    "enabled": CONFIG_BF16_ENABLED
+  },
+  "scheduler": {
+        "type": "WarmupLR",
+        "params": {
+            "warmup_min_lr": "auto",
+            "warmup_max_lr": "auto",
+            "warmup_num_steps": "auto"
+        }
+  },
+  "wall_clock_breakdown" : false,
+  "mem_chunk": {
+       "default_chunk_size": 268435455,
+       "use_fake_dist": false,
+       "client": {
+           "mem_tracer": {
+               "use_async_mem_monitor": true,
+               "warmup_gpu_chunk_mem_ratio": 0.8,
+               "overall_gpu_mem_ratio": 0.8,
+               "overall_cpu_mem_ratio": 1.0,
+               "margin_use_ratio": 0.8,
+               "use_fake_dist": false
+           },
+           "opts": {
+               "with_mem_cache": true,
+               "with_async_move": true
+           }
+       }
+  }
+}

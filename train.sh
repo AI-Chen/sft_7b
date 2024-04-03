@@ -27,11 +27,29 @@ echo data_path:$data_path
 #pad_id=50256
 #eod_id=50256
 
-model_type="gpt_large"
-model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/gpt2_large"
+#model_type="gpt_large"
+#model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/gpt2_large"
+#sep_id=50256
+#pad_id=50256
+#eod_id=50256
+
+model_type="gpt_xl"
+model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/gpt2_xl"
 sep_id=50256
 pad_id=50256
 eod_id=50256
+
+#model_type="mini_cpm_2b"
+#model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/mini_cpm_2b"
+#sep_id=3
+#pad_id=2
+#eod_id=2
+
+#model_type="opt150m"
+#model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/opt150m/"
+#sep_id=0
+#pad_id=1
+#eod_id=2
 
 #model_type="falcon"
 #model_name_or_path="/media/xschen/A6503F3E503F1491/xiaoshuchen/MODEL/falcon_7b"
@@ -50,11 +68,11 @@ max_seq_len=256
 dataloader_num_workers=2
 
 learning_rate=1e-5
-logging_steps=20
-eval_steps=1000 #20,150
-save_steps=10
+logging_steps=10
+eval_steps=1 #20,150
+save_steps=1
 num_train_epochs=20
-gradient_accumulation_steps=2
+gradient_accumulation_steps=1
 warmup_steps=1200 #1200
 
 output_dir="ckpt/$exp_name"
@@ -63,7 +81,15 @@ if [ ! -d $output_dir ]; then
 fi
 echo output_dir: output_dir
 
-RUN="sft_7b"
+
+#template_json="./ds_config_gpt_TEMPLATE.json"
+##template_json="${CWD}/argument/ds_config_gpt_TEMPLATE_zero2.json"
+#config_json="./ds_config_gpt_.json"
+#sed "s/CONFIG_FP16_ENABLED/true/" ${template_json} \
+#    | sed "s/CONFIG_BF16_ENABLED/false/" \
+#          > ${config_json}
+
+RUN="sft_7b.py"
 #######################################################################################
 
 ########################################## Run ########################################
@@ -71,10 +97,13 @@ if [ $NPROC = 1 ]
 then
     distributed_cmd=" "
 else
-    distributed_cmd=" -m --nproc_per_node $NPROC"
+    # distributed_cmd=" -m --nproc_per_node $NPROC"
+    distributed_cmd="--num_processes $NPROC"
 fi
 
-torchrun $distributed_cmd \
+# deepspeed --num_gpus=$NPROC $RUN \
+
+accelerate launch --config_file deepspeed_zero3.yaml \
   $RUN \
   --data_name $data_name \
   --data_path $data_path \
