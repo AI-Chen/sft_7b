@@ -8,6 +8,7 @@ transformers==4.38.2
 accelerate==0.28.0
 peft==0.9.0
 jsonlines==4.0.0
+deepspeed==0.14.0
 ```
 
 ## 2.数据准备
@@ -22,8 +23,21 @@ $你的文件夹路径/apibench/*
 
 ## 3.模型准备
 
-以 gpt2-base 模型为例，需要您去 [huggingface](https://huggingface.co/models)上搜索`gpt2-base`，然后在对应界面下载模型参数以及对应包括tokenizer、config等文件在内的文件。
+参考 gpt2-base 模型的使用：
+
+- 需要您去 [huggingface](https://huggingface.co/models)上搜索`模型名称`，如gpt2-base。然后在对应界面下载模型参数以及对应包括tokenizer、config等文件在内的文件。
 并将其放置于你的本地文件夹中。
+
+- 将模型对应 modeling.py 文件放置于 `modeling` 下您自己新建的对应该模型的文件夹中。
+
+- 在`sft.py` 中，导入该模型并添加加载该模型的代码
+
+- 在`train.sh`中， 添加该模型参数文件对应的文件路径，以及 tokenizer 对应的特殊 token.
+
+本套代码理论上支持所有所有GPT形式的自回归语言模型模型,只需要大约几分钟的适配。
+
+注意: 类似T5等基于编码器-解码器形式的模型，本套代码还尚未支持，按上述形式添加可能存在问题。
+
 ```commandline
 $你的文件夹路径/gpt2_base/*
 ```
@@ -44,13 +58,12 @@ sh train.sh
 ```commandline
 only_api_call：是否只输出api_call这个结果
 target_loss：是否只对输出的token计算loss
-quantization：是否加载量化后的模型参数（当GPU显存不够时开启）
-lora：是否使用lora进行训练（当GPU显存不够时开启）
 ```
 
 
 ## 5.TODO LIST
 
-- [ ] Target Loss
-- [ ] Inferring script
+- [x] Target Loss
+- [x] Inferring script
+- [ ] T5 Model
 - [ ] A Platform for displaying the results of different models in a GSB way
