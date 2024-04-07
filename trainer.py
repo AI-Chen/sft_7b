@@ -60,43 +60,42 @@ class Trainer(Trainer):
             self.log(metrics)
             self._report_to_hp_search(trial, epoch, metrics)  # self.state.global_step
 
-        ''' 
         if self.control.should_save:
-            self._save_checkpoint(model, trial, metrics=logs)
+            self._save_checkpoint(model, trial, metrics=None)
             self.control = self.callback_handler.on_save(self.args, self.state, self.control)
-         '''
-    def prediction_step(
-            self,
-            model,
-            inputs: Dict[str, Union[torch.Tensor, Any]],
-            prediction_loss_only: bool,
-            ignore_keys: Optional[List[str]] = None,
-    ):
-        assert prediction_loss_only == False
-        assert ignore_keys is None
 
-        inputs = self._prepare_inputs(inputs)
-        labels = inputs.get("api_ids")
-
-        input_data = {
-            "input_ids": inputs.get("sample_ids"),
-            "attention_mask": inputs.get("sample_attn_mask"),
-            "labels": inputs.get("sample_labels")
-        }
-        model_out = model(**input_data)
-        loss = model_out.loss.detach()
-
-        instruction = inputs.get("ins_ids")
-
-        #loss = None
-        preds = []
-        sequence_lengths = (torch.ne(instruction, self.args.eod_id).sum(-1)).to(labels.device)
-        for bidx, bdata in enumerate(instruction):
-            seq_l_idx = sequence_lengths[bidx]
-            # print(convert_ids_to_string(bdata[:seq_l_idx]))
-            # print(a)
-            output = model.generate(input_ids=bdata[:seq_l_idx].unsqueeze(0), max_length=self.args.max_seq_len).squeeze()
-            output = output.tolist() + (self.args.max_seq_len - len(output)) * [self.args.pad_id]
-            preds.append(output)
-        preds = torch.tensor(preds).cuda(device=labels.device)
-        return (loss, preds, labels)
+    # def prediction_step(
+    #         self,
+    #         model,
+    #         inputs: Dict[str, Union[torch.Tensor, Any]],
+    #         prediction_loss_only: bool,
+    #         ignore_keys: Optional[List[str]] = None,
+    # ):
+    #     assert prediction_loss_only == False
+    #     assert ignore_keys is None
+    #
+    #     inputs = self._prepare_inputs(inputs)
+    #     labels = inputs.get("api_ids")
+    #
+    #     # input_data = {
+    #     #     "input_ids": inputs.get("sample_ids"),
+    #     #     "attention_mask": inputs.get("sample_attn_mask"),
+    #     #     "labels": inputs.get("sample_labels")
+    #     # }
+    #     # model_out = model(**input_data)
+    #     # loss = model_out.loss.detach()
+    #
+    #     instruction = inputs.get("ins_ids")
+    #
+    #     loss = None
+    #     preds = torch.zeros_like(labels)
+    #     sequence_lengths = (torch.ne(instruction, self.args.eod_id).sum(-1)).to(labels.device)
+    #     # for bidx, bdata in enumerate(instruction):
+    #     #     seq_l_idx = sequence_lengths[bidx]
+    #     #     # print(convert_ids_to_string(bdata[:seq_l_idx]))
+    #     #     # print(a)
+    #     #     output = model.generate(input_ids=bdata[:seq_l_idx].unsqueeze(0), max_length=self.args.max_seq_len).squeeze()
+    #     #     output = output.tolist() + (self.args.max_seq_len - len(output)) * [self.args.pad_id]
+    #     #     preds.append(output)
+    #     preds = torch.tensor(preds).cuda(device=labels.device)
+    #     return (loss, preds, labels)

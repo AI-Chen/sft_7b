@@ -63,14 +63,14 @@ eod_id=50256
 NPROC=2
 per_device_train_batch_size=2
 per_device_eval_batch_size=1 #32,8
-
-max_seq_len=256
+max_seq_len=300
+# Please change the max_seq_len or per_device_train_batch_size when OOM
 dataloader_num_workers=2
 
 learning_rate=1e-5
-logging_steps=10
-eval_steps=1 #20,150
-save_steps=1
+logging_steps=1
+eval_steps=10 #20,150
+save_steps=10
 num_train_epochs=20
 gradient_accumulation_steps=1
 warmup_steps=1200 #1200
@@ -102,7 +102,10 @@ else
 fi
 
 # deepspeed --num_gpus=$NPROC $RUN \
-
+# evaluation_strategy: steps, no
+#  --evaluation_strategy "steps" \
+#  --eval_steps $eval_steps \
+#  --save_steps $save_steps \
 accelerate launch --config_file deepspeed_zero3.yaml \
   $RUN \
   --data_name $data_name \
@@ -115,10 +118,8 @@ accelerate launch --config_file deepspeed_zero3.yaml \
   --output_dir $output_dir \
   --eval_accumulation_steps 1 \
   --logging_steps $logging_steps \
-  --save_total_limit 1 \
-  --evaluation_strategy "steps" \
-  --eval_steps $eval_steps \
-  --save_steps $save_steps \
+  --save_total_limit 20 \
+  --save_strategy "epoch" \
   --num_train_epochs $num_train_epochs \
   --learning_rate $learning_rate \
   --lr_scheduler_type "cosine_with_restarts" \
